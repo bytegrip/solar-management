@@ -150,8 +150,8 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
             onClick={() => onTimeRangeChange('today')}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
               timeRange === 'today'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white hover:shadow-lg hover:shadow-gray-500/10'
             }`}
           >
             Today
@@ -160,8 +160,8 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
             onClick={() => onTimeRangeChange('yesterday')}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
               timeRange === 'yesterday'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white hover:shadow-lg hover:shadow-gray-500/10'
             }`}
           >
             Yesterday
@@ -170,8 +170,8 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
             onClick={() => onTimeRangeChange('week')}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
               timeRange === 'week'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white hover:shadow-lg hover:shadow-gray-500/10'
             }`}
           >
             Week
@@ -180,21 +180,22 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
             onClick={() => onTimeRangeChange('month')}
             className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
               timeRange === 'month'
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white hover:shadow-lg hover:shadow-gray-500/10'
             }`}
           >
             Month
           </button>
         </div>
       </div>
-      <div className="h-[400px] w-full">
+      <div className="h-[400px] w-full relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/5 to-transparent pointer-events-none" />
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={formattedData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
             <defs>
               {config.lines.map(line => (
                 <linearGradient key={line.key} id={`gradient-${line.key}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={line.color} stopOpacity={0.3}/>
+                  <stop offset="5%" stopColor={line.color} stopOpacity={0.4}/>
                   <stop offset="95%" stopColor={line.color} stopOpacity={0}/>
                 </linearGradient>
               ))}
@@ -225,12 +226,13 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
             />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: '#1F2937',
+                backgroundColor: 'rgba(31, 41, 55, 0.95)',
                 border: 'none',
                 borderRadius: '0.5rem',
                 color: '#F3F4F6',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                fontSize: '11px'
+                fontSize: '11px',
+                backdropFilter: 'blur(8px)'
               }}
               labelStyle={{ color: '#F3F4F6', fontSize: '11px' }}
             />
@@ -250,9 +252,14 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
                 stroke={line.color}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 6, fill: line.color }}
+                activeDot={{ r: 6, fill: line.color, strokeWidth: 2, stroke: 'rgba(255, 255, 255, 0.2)' }}
                 animationDuration={1500}
                 animationBegin={0}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                isAnimationActive={true}
+                animationEasing="ease-out"
+                fill={`url(#gradient-${line.key})`}
               />
             ))}
           </LineChart>
