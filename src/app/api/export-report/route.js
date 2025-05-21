@@ -503,6 +503,12 @@ export async function GET(request) {
         startDate.setHours(0, 0, 0, 0)
         endDate = now
         break
+      case 'yesterday':
+        startDate.setDate(now.getDate() - 1)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = new Date(startDate)
+        endDate.setHours(23, 59, 59, 999)
+        break
       case 'week':
         startDate.setDate(now.getDate() - 7)
         startDate.setHours(0, 0, 0, 0)

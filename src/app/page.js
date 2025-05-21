@@ -13,26 +13,41 @@ import { Navbar } from '@/components/Navbar'
 
 export default function Dashboard() {
   const [data, setData] = useState([])
+  const [currentData, setCurrentData] = useState([])
   const [timeRange, setTimeRange] = useState('today')
   const [loading, setLoading] = useState(true)
 
-  const fetchData = async () => {
+  const fetchCurrentData = async () => {
     try {
       const response = await fetch('/api/solar-data?timeRange=today')
       const newData = await response.json()
+      setCurrentData(newData)
+    } catch (error) {
+      console.error('Error fetching current data:', error)
+    }
+  }
+
+  const fetchHistoricalData = async () => {
+    try {
+      const response = await fetch(`/api/solar-data?timeRange=${timeRange}`)
+      const newData = await response.json()
       setData(newData)
     } catch (error) {
-      console.error('Error fetching data:', error)
+      console.error('Error fetching historical data:', error)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
-    const interval = setInterval(fetchData, 20000)
-    return () => clearInterval(interval)
+    fetchCurrentData()
+    const currentInterval = setInterval(fetchCurrentData, 20000)
+    return () => clearInterval(currentInterval)
   }, [])
+
+  useEffect(() => {
+    fetchHistoricalData()
+  }, [timeRange])
 
   if (loading) {
     return (
@@ -52,8 +67,8 @@ export default function Dashboard() {
     )
   }
 
-  const latestData = data[data.length - 1]?.data || {}
-  const lastUpdateTime = data[data.length - 1]?.timestamp?.$date || data[data.length - 1]?.timestamp
+  const latestData = currentData[currentData.length - 1]?.data || {}
+  const lastUpdateTime = currentData[currentData.length - 1]?.timestamp?.$date || currentData[currentData.length - 1]?.timestamp
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -87,13 +102,13 @@ export default function Dashboard() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
         >
           <motion.div variants={itemVariants} className="h-full">
-            <BatteryStatus data={latestData} history={data} />
+            <BatteryStatus data={latestData} history={currentData} />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <PowerStats data={latestData} />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
-            <SystemStatus data={latestData} history={data} />
+            <SystemStatus data={latestData} history={currentData} />
           </motion.div>
         </motion.div>
 

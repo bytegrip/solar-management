@@ -4,7 +4,13 @@ import Image from 'next/image'
 export function Navbar({ lastUpdateTime }) {
   const handleExport = async (timeRange) => {
     try {
+      console.log('Exporting report for:', timeRange)
       const response = await fetch(`/api/export-report?timeRange=${timeRange}`)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -16,6 +22,7 @@ export function Navbar({ lastUpdateTime }) {
       document.body.removeChild(a)
     } catch (error) {
       console.error('Error exporting report:', error)
+      alert(`Failed to export report: ${error.message}`)
     }
   }
 

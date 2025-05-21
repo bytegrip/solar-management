@@ -8,33 +8,40 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const startOfYesterday = new Date(startOfDay)
     startOfYesterday.setDate(startOfDay.getDate() - 1)
+    const endOfYesterday = new Date(startOfYesterday)
+    endOfYesterday.setHours(23, 59, 59, 999)
     const startOfWeek = new Date(startOfDay)
     startOfWeek.setDate(startOfDay.getDate() - 7)
     const startOfMonth = new Date(startOfDay)
     startOfMonth.setMonth(startOfDay.getMonth() - 1)
 
-    let startTime
+    let startTime, endTime
     switch (timeRange) {
       case 'today':
         startTime = startOfDay
+        endTime = now
         break
       case 'yesterday':
         startTime = startOfYesterday
+        endTime = endOfYesterday
         break
       case 'week':
         startTime = startOfWeek
+        endTime = now
         break
       case 'month':
         startTime = startOfMonth
+        endTime = now
         break
       default:
         startTime = startOfDay
+        endTime = now
     }
 
     return data.filter(item => {
       const dateStr = item.timestamp.$date || item.timestamp
       const date = new Date(dateStr)
-      return date >= startTime && date <= now
+      return date >= startTime && date <= endTime
     })
   }
 
