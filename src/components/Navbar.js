@@ -38,7 +38,7 @@ export function Navbar({ lastUpdateTime }) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => handleExport('today')}
                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
