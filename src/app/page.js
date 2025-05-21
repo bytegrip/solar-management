@@ -18,7 +18,7 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(`/api/solar-data?timeRange=${timeRange}`)
+      const response = await fetch('/api/solar-data?timeRange=today')
       const newData = await response.json()
       setData(newData)
     } catch (error) {
@@ -32,7 +32,7 @@ export default function Dashboard() {
     fetchData()
     const interval = setInterval(fetchData, 20000)
     return () => clearInterval(interval)
-  }, [timeRange])
+  }, [])
 
   if (loading) {
     return (
