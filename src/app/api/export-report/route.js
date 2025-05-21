@@ -36,31 +36,26 @@ function calculateStatistics(data) {
     const currentData = item.data
     const timestamp = new Date(item.timestamp.$date || item.timestamp)
     
-    // Battery statistics
     stats.battery.avgCapacity += currentData.battery_capacity
     stats.battery.minCapacity = Math.min(stats.battery.minCapacity, currentData.battery_capacity)
     stats.battery.maxCapacity = Math.max(stats.battery.maxCapacity, currentData.battery_capacity)
     stats.battery.avgVoltage += currentData.battery_voltage
 
-    // Power statistics
     stats.power.avgPvInput += currentData.pv_input_power
     stats.power.maxPvInput = Math.max(stats.power.maxPvInput, currentData.pv_input_power)
     stats.power.avgAcOutput += currentData.ac_output_active_power
     stats.power.maxAcOutput = Math.max(stats.power.maxAcOutput, currentData.ac_output_active_power)
 
-    // Temperature statistics
     stats.temperature.avgTemp += currentData.inverter_heat_sink_temperature
     stats.temperature.maxTemp = Math.max(stats.temperature.maxTemp, currentData.inverter_heat_sink_temperature)
     stats.temperature.minTemp = Math.min(stats.temperature.minTemp, currentData.inverter_heat_sink_temperature)
 
-    // Calculate energy (power * time)
     if (lastTimestamp) {
       const timeDiff = (timestamp - lastTimestamp) / (1000 * 60 * 60) // hours
       stats.power.totalPvEnergy += (currentData.pv_input_power * timeDiff)
       stats.power.totalAcEnergy += (currentData.ac_output_active_power * timeDiff)
     }
 
-    // Calculate charging time
     if (currentData.battery_charging_current > 0) {
       if (!isCharging) {
         chargingStart = timestamp
@@ -77,7 +72,6 @@ function calculateStatistics(data) {
     lastTimestamp = timestamp
   })
 
-  // Calculate averages
   const count = data.length
   stats.battery.avgCapacity /= count
   stats.battery.avgVoltage /= count
@@ -89,9 +83,7 @@ function calculateStatistics(data) {
 }
 
 async function generateCharts(data) {
-  // Format timestamps to be less cluttered
   const timestamps = data.map((item, index) => {
-    // Only show every nth label to reduce clutter
     if (index % Math.ceil(data.length / 6) !== 0) return ''
     const date = new Date(item.timestamp.$date || item.timestamp)
     return date.toLocaleTimeString('en-US', {
@@ -101,7 +93,6 @@ async function generateCharts(data) {
     })
   })
   
-  // Battery Capacity Chart
   const batteryCapacityChart = new QuickChart()
   batteryCapacityChart.setWidth(800)
   batteryCapacityChart.setHeight(400)
@@ -148,7 +139,6 @@ async function generateCharts(data) {
     }
   })
 
-  // Power Chart
   const powerChart = new QuickChart()
   powerChart.setWidth(800)
   powerChart.setHeight(400)
@@ -203,7 +193,6 @@ async function generateCharts(data) {
     }
   })
 
-  // Temperature Chart
   const temperatureChart = new QuickChart()
   temperatureChart.setWidth(800)
   temperatureChart.setHeight(400)
@@ -248,12 +237,10 @@ async function generateCharts(data) {
     }
   })
 
-  // Generate chart images
   const batteryCapacityUrl = batteryCapacityChart.getUrl()
   const powerUrl = powerChart.getUrl()
   const temperatureUrl = temperatureChart.getUrl()
 
-  // Fetch chart images
   const batteryCapacityResponse = await fetch(batteryCapacityUrl)
   const powerResponse = await fetch(powerUrl)
   const temperatureResponse = await fetch(temperatureUrl)
@@ -270,21 +257,17 @@ async function generateCharts(data) {
 }
 
 async function generatePDF(stats, timeRange, data) {
-  // Create a new PDF document
   const pdfDoc = await PDFDocument.create()
   
-  // Embed the standard font
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
   
-  // Add pages
   const page1 = pdfDoc.addPage([595.28, 841.89]) // A4 size
   const page2 = pdfDoc.addPage([595.28, 841.89])
   const page3 = pdfDoc.addPage([595.28, 841.89])
   
   const { width, height } = page1.getSize()
   
-  // Common text properties
   const titleFontSize = 24
   const headerFontSize = 18
   const textFontSize = 12
@@ -292,9 +275,7 @@ async function generatePDF(stats, timeRange, data) {
   const margin = 50
   const lineHeight = 20
   
-  // Function to draw header on each page
   const drawHeader = (page, title) => {
-    // Draw background gradient
     page.drawRectangle({
       x: 0,
       y: 0,
@@ -303,7 +284,6 @@ async function generatePDF(stats, timeRange, data) {
       color: rgb(0.95, 0.95, 0.95)
     })
     
-    // Draw title
     page.drawText(title, {
       x: width / 2 - 100,
       y: height - 50,
@@ -312,7 +292,6 @@ async function generatePDF(stats, timeRange, data) {
       color: rgb(0.12, 0.25, 0.67) // #1E40AF
     })
     
-    // Draw time period
     page.drawText(`Time Period: ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}`, {
       x: width / 2 - 80,
       y: height - 80,
@@ -322,7 +301,6 @@ async function generatePDF(stats, timeRange, data) {
     })
   }
   
-  // Function to draw footer on each page
   const drawFooter = (page) => {
     page.drawText(`Generated on ${new Date().toLocaleString()}`, {
       x: width / 2 - 100,
@@ -333,10 +311,8 @@ async function generatePDF(stats, timeRange, data) {
     })
   }
   
-  // Page 1: Overview and Battery Statistics
   drawHeader(page1, 'Solar Panel Report')
   
-  // Draw battery capacity chart
   const charts = await generateCharts(data)
   const batteryCapacityPdfImage = await pdfDoc.embedPng(charts.batteryCapacityImage)
   page1.drawImage(batteryCapacityPdfImage, {
@@ -346,7 +322,6 @@ async function generatePDF(stats, timeRange, data) {
     height: 300
   })
   
-  // Draw battery statistics
   const batteryStats = [
     `Average Battery Capacity: ${stats.battery.avgCapacity.toFixed(1)}%`,
     `Minimum Battery Capacity: ${stats.battery.minCapacity.toFixed(1)}%`,
@@ -375,10 +350,8 @@ async function generatePDF(stats, timeRange, data) {
   
   drawFooter(page1)
   
-  // Page 2: Power Generation and Consumption
   drawHeader(page2, 'Power Analysis')
   
-  // Draw power chart
   const powerPdfImage = await pdfDoc.embedPng(charts.powerImage)
   page2.drawImage(powerPdfImage, {
     x: margin,

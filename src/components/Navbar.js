@@ -45,6 +45,11 @@ export function Navbar({ lastUpdateTime }) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {lastUpdateTime && (
+              <div className="flex items-center gap-2 text-gray-400">
+                <LastRefresh timestamp={lastUpdateTime} />
+              </div>
+            )}
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => handleExport('today')}
@@ -74,11 +79,6 @@ export function Navbar({ lastUpdateTime }) {
                 Month
               </button>
             </div>
-            {lastUpdateTime && (
-              <div className="flex items-center gap-2 text-gray-400">
-                <LastRefresh timestamp={lastUpdateTime} />
-              </div>
-            )}
           </div>
         </div>
       </div>
