@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [currentData, setCurrentData] = useState([])
   const [timeRange, setTimeRange] = useState('today')
   const [loading, setLoading] = useState(true)
+  const [minLoadingComplete, setMinLoadingComplete] = useState(false)
 
   const fetchCurrentData = async () => {
     try {
@@ -40,16 +41,25 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
+    // Set minimum loading time
+    const minLoadingTimer = setTimeout(() => {
+      setMinLoadingComplete(true)
+    }, 500)
+
     fetchCurrentData()
     const currentInterval = setInterval(fetchCurrentData, 20000)
-    return () => clearInterval(currentInterval)
+    
+    return () => {
+      clearInterval(currentInterval)
+      clearTimeout(minLoadingTimer)
+    }
   }, [])
 
   useEffect(() => {
     fetchHistoricalData()
   }, [timeRange])
 
-  if (loading) {
+  if (loading || !minLoadingComplete) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <motion.div

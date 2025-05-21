@@ -207,7 +207,12 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="#374151" 
+              opacity={0.1}
+              vertical={false}
+            />
             <XAxis 
               dataKey="timestamp" 
               stroke="#6B7280"
@@ -230,6 +235,7 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
               stroke="#6B7280"
               tick={{ fill: '#6B7280', fontSize: 11 }}
               tickLine={{ stroke: '#6B7280' }}
+              axisLine={false}
             />
             <Tooltip 
               contentStyle={{ 
@@ -242,6 +248,7 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
                 backdropFilter: 'blur(8px)'
               }}
               labelStyle={{ color: '#F3F4F6', fontSize: '11px' }}
+              cursor={{ stroke: 'rgba(255, 255, 255, 0.1)', strokeWidth: 2 }}
             />
             <Legend 
               wrapperStyle={{ 
@@ -249,6 +256,8 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
                 color: '#6B7280',
                 fontSize: '10px'
               }}
+              iconType="circle"
+              iconSize={8}
             />
             {config.lines.map(line => (
               <Line
@@ -259,7 +268,13 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
                 stroke={line.color}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 6, fill: line.color, strokeWidth: 2, stroke: 'rgba(255, 255, 255, 0.2)' }}
+                activeDot={{ 
+                  r: 6, 
+                  fill: line.color, 
+                  strokeWidth: 2, 
+                  stroke: 'rgba(255, 255, 255, 0.2)',
+                  filter: 'drop-shadow(0 0 4px rgba(255, 255, 255, 0.2))'
+                }}
                 animationDuration={1500}
                 animationBegin={0}
                 strokeLinecap="round"
