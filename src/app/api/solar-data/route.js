@@ -1,63 +1,54 @@
-import { MongoClient } from 'mongodb'
-
-const uri = process.env.MONGODB_URI
-const client = new MongoClient(uri)
+import { NextResponse } from 'next/server'
+import { connectToDatabase } from '@/lib/mongodb'
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
-  const timeRange = searchParams.get('timeRange') || '1d'
-  const dataType = searchParams.get('dataType') || 'all'
+  const timeRange = searchParams.get('timeRange') || 'today'
 
   try {
-    await client.connect()
-    const db = client.db('solar')
+    const { db } = await connectToDatabase()
     const collection = db.collection('solar_data')
-
+    
     const now = new Date()
     let startDate = new Date()
+    let endDate = new Date()
 
     switch (timeRange) {
-      case '1d':
+      case 'today':
+        startDate.setHours(0, 0, 0, 0)
+        endDate = now
+        break
+      case 'yesterday':
         startDate.setDate(now.getDate() - 1)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = new Date(startDate)
+        endDate.setHours(23, 59, 59, 999)
         break
-      case '3d':
-        startDate.setDate(now.getDate() - 3)
-        break
-      case '1w':
+      case 'week':
         startDate.setDate(now.getDate() - 7)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = now
         break
-      case '1m':
+      case 'month':
         startDate.setMonth(now.getMonth() - 1)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = now
         break
       default:
-        startDate.setDate(now.getDate() - 1)
+        startDate.setHours(0, 0, 0, 0)
+        endDate = now
     }
 
-    let query = {
-      timestamp: { $gte: startDate }
-    }
-
-    if (dataType === 'day') {
-      query['$expr'] = {
-        $and: [
-          { $gte: [{ $hour: '$timestamp' }, 6] },
-          { $lt: [{ $hour: '$timestamp' }, 18] }
-        ]
+    const data = await collection.find({
+      timestamp: { 
+        $gte: startDate,
+        $lte: endDate
       }
-    } else if (dataType === 'night') {
-      query['$expr'] = {
-        $or: [
-          { $lt: [{ $hour: '$timestamp' }, 6] },
-          { $gte: [{ $hour: '$timestamp' }, 18] }
-        ]
-      }
-    }
+    }).sort({ timestamp: 1 }).toArray()
 
-    const data = await collection.find(query).sort({ timestamp: 1 }).toArray()
-    return Response.json(data)
+    return NextResponse.json(data)
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 })
-  } finally {
-    await client.close()
+    console.error('Error fetching data:', error)
+    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
   }
 } 

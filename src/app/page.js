@@ -9,10 +9,11 @@ import { SolarChart } from '@/components/SolarChart'
 import { LastRefresh } from '@/components/LastRefresh'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Navbar } from '@/components/Navbar'
 
 export default function Dashboard() {
   const [data, setData] = useState([])
-  const [timeRange, setTimeRange] = useState('1d')
+  const [timeRange, setTimeRange] = useState('today')
   const [loading, setLoading] = useState(true)
 
   const fetchData = async () => {
@@ -77,22 +78,8 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <Navbar lastUpdateTime={lastUpdateTime} />
       <div className="max-w-[1400px] mx-auto p-4 sm:p-6 space-y-6">
-        <div className="flex flex-col items-center">
-          <motion.div 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-4"
-          >
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-400 bg-clip-text text-transparent animate-gradient mb-4">
-              Solar Management Dashboard
-            </h1>
-            <p className="text-gray-400 text-lg">Real-time monitoring of your solar system</p>
-          </motion.div>
-          {lastUpdateTime && <LastRefresh timestamp={lastUpdateTime} />}
-        </div>
-
         <motion.div 
           variants={containerVariants}
           initial="hidden"
@@ -100,13 +87,13 @@ export default function Dashboard() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
         >
           <motion.div variants={itemVariants} className="h-full">
-            <BatteryStatus data={latestData} />
+            <BatteryStatus data={latestData} history={data} />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <PowerStats data={latestData} />
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
-            <SystemStatus data={latestData} />
+            <SystemStatus data={latestData} history={data} />
           </motion.div>
         </motion.div>
 
@@ -117,23 +104,23 @@ export default function Dashboard() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
         >
           <motion.div variants={itemVariants} className="h-full">
-            <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
-              <SolarChart data={data} type="power" />
-            </Card>
-          </motion.div>
-          <motion.div variants={itemVariants} className="h-full">
-            <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-emerald-500/10">
-              <SolarChart data={data} type="battery" />
-            </Card>
-          </motion.div>
-          <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
-              <SolarChart data={data} type="voltage" />
+              <SolarChart data={data} type="voltage" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+            </Card>
+          </motion.div>
+          <motion.div variants={itemVariants} className="h-full">
+            <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
+              <SolarChart data={data} type="power" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+            </Card>
+          </motion.div>
+          <motion.div variants={itemVariants} className="h-full">
+            <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/10">
+              <SolarChart data={data} type="current" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
             </Card>
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/10">
-              <SolarChart data={data} type="temperature" />
+              <SolarChart data={data} type="temperature" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
             </Card>
           </motion.div>
         </motion.div>

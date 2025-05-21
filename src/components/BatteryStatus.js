@@ -1,8 +1,9 @@
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { motion } from 'framer-motion'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
-export function BatteryStatus({ data }) {
+export function BatteryStatus({ data, history }) {
   const batteryLevel = data.battery_capacity || 0
   const batteryVoltage = data.battery_voltage || 0
   const chargingCurrent = data.battery_charging_current || 0
@@ -10,6 +11,7 @@ export function BatteryStatus({ data }) {
   const isChargingToFloat = data.is_charging_to_float === 1
   const batteryVoltageFromScc = data.battery_voltage_from_scc || 0
   const batteryDischargeCurrent = data.battery_discharge_current || 0
+  const inverterTemp = data.inverter_heat_sink_temperature || 0
 
   const getBatteryColor = (level) => {
     if (level >= 80) return 'bg-emerald-500'
@@ -21,6 +23,43 @@ export function BatteryStatus({ data }) {
     if (level >= 80) return 'from-emerald-500 to-emerald-400'
     if (level >= 40) return 'from-yellow-500 to-yellow-400'
     return 'from-red-500 to-red-400'
+  }
+
+  const formatHistoryData = (history) => {
+    return history.map(item => {
+      const dateStr = item.timestamp.$date || item.timestamp
+      const date = new Date(dateStr)
+      return {
+        timestamp: date.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
+        capacity: item.data.battery_capacity
+      }
+    })
+  }
+
+  const MiniChart = ({ data, dataKey, color, height = 40 }) => {
+    if (!data || data.length === 0) return null
+    return (
+      <div className={`h-[${height}px] w-full mt-1`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+            <Line
+              type="monotone"
+              dataKey={dataKey}
+              stroke={color}
+              strokeWidth={1}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    )
   }
 
   return (
@@ -42,7 +81,7 @@ export function BatteryStatus({ data }) {
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent"
               animate={{
-                x: ["0%", "100%"],
+                x: ["0%", `${batteryLevel}%`],
               }}
               transition={{
                 duration: 2,
@@ -53,6 +92,7 @@ export function BatteryStatus({ data }) {
                 width: "50%",
                 height: "100%",
                 background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)",
+                maxWidth: `${batteryLevel}%`,
               }}
             />
             {isCharging && (
@@ -70,6 +110,44 @@ export function BatteryStatus({ data }) {
                 </motion.svg>
               </div>
             )}
+          </div>
+          <div className="h-16 mt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={formatHistoryData(history)} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                <defs>
+                  <linearGradient id="capacityGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#1F2937',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    color: '#F3F4F6',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    fontSize: '11px'
+                  }}
+                  labelStyle={{ color: '#F3F4F6', fontSize: '11px' }}
+                  labelFormatter={(label, payload) => {
+                    if (!payload || !payload[0] || !payload[0].payload) return label
+                    return payload[0].payload.timestamp
+                  }}
+                  formatter={(value) => [`${value}%`, 'Battery Level']}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="capacity"
+                  name="Battery Level"
+                  stroke="#10B981"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#10B981' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 flex-grow">

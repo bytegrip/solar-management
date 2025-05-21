@@ -2,9 +2,7 @@ import { Card } from '@/components/ui/card'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { useState } from 'react'
 
-export function SolarChart({ data, type }) {
-  const [interval, setInterval] = useState('today')
-
+export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
   const getFilteredData = (data) => {
     const now = new Date()
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -16,7 +14,7 @@ export function SolarChart({ data, type }) {
     startOfMonth.setMonth(startOfDay.getMonth() - 1)
 
     let startTime
-    switch (interval) {
+    switch (timeRange) {
       case 'today':
         startTime = startOfDay
         break
@@ -92,9 +90,12 @@ export function SolarChart({ data, type }) {
       case 'battery':
         return {
           lines: [
-            { key: 'batteryLevel', name: 'Battery Level (%)', color: '#10B981' },
-            { key: 'batteryVoltage', name: 'Battery Voltage (V)', color: '#3B82F6' },
-            { key: 'batteryVoltageFromScc', name: 'SCC Battery Voltage (V)', color: '#8B5CF6' },
+            { key: 'batteryVoltage', name: 'Battery Voltage (V)', color: '#3B82F6' }
+          ]
+        }
+      case 'current':
+        return {
+          lines: [
             { key: 'chargingCurrent', name: 'Charging Current (A)', color: '#F59E0B' },
             { key: 'batteryDischargeCurrent', name: 'Discharge Current (A)', color: '#EF4444' }
           ]
@@ -102,10 +103,11 @@ export function SolarChart({ data, type }) {
       case 'voltage':
         return {
           lines: [
+            { key: 'batteryVoltage', name: 'Battery Voltage (V)', color: '#3B82F6' },
             { key: 'pvInputVoltage', name: 'PV Input Voltage (V)', color: '#10B981' },
-            { key: 'acInputVoltage', name: 'AC Input Voltage (V)', color: '#3B82F6' },
-            { key: 'acOutputVoltage', name: 'AC Output Voltage (V)', color: '#8B5CF6' },
-            { key: 'busVoltage', name: 'Bus Voltage (V)', color: '#F59E0B' }
+            { key: 'acInputVoltage', name: 'AC Input Voltage (V)', color: '#8B5CF6' },
+            { key: 'acOutputVoltage', name: 'AC Output Voltage (V)', color: '#F59E0B' },
+            { key: 'busVoltage', name: 'Bus Voltage (V)', color: '#EF4444' }
           ]
         }
       case 'temperature':
@@ -128,12 +130,12 @@ export function SolarChart({ data, type }) {
     switch(type) {
       case 'power':
         return 'Power Statistics'
-      case 'battery':
-        return 'Battery Statistics'
+      case 'current':
+        return 'Battery Current'
       case 'voltage':
-        return 'Voltage Statistics'
+        return 'System Voltage'
       case 'temperature':
-        return 'Temperature Statistics'
+        return 'Temp Stats'
       default:
         return 'Statistics'
     }
@@ -145,41 +147,41 @@ export function SolarChart({ data, type }) {
         <h2 className="text-xl sm:text-2xl font-semibold text-white">{getChartTitle()}</h2>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setInterval('today')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              interval === 'today'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            onClick={() => onTimeRangeChange('today')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              timeRange === 'today'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
             }`}
           >
             Today
           </button>
           <button
-            onClick={() => setInterval('yesterday')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              interval === 'yesterday'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            onClick={() => onTimeRangeChange('yesterday')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              timeRange === 'yesterday'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
             }`}
           >
             Yesterday
           </button>
           <button
-            onClick={() => setInterval('week')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              interval === 'week'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            onClick={() => onTimeRangeChange('week')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              timeRange === 'week'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
             }`}
           >
             Week
           </button>
           <button
-            onClick={() => setInterval('month')}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              interval === 'month'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            onClick={() => onTimeRangeChange('month')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+              timeRange === 'month'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/20'
+                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white'
             }`}
           >
             Month
@@ -203,6 +205,18 @@ export function SolarChart({ data, type }) {
               stroke="#6B7280"
               tick={{ fill: '#6B7280', fontSize: 11 }}
               tickLine={{ stroke: '#6B7280' }}
+              interval="preserveStartEnd"
+              minTickGap={50}
+              tickFormatter={(value) => {
+                const date = new Date(value)
+                if (timeRange === 'today' || timeRange === 'yesterday') {
+                  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                } else if (timeRange === 'week') {
+                  return date.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', hour12: true })
+                } else {
+                  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                }
+              }}
             />
             <YAxis 
               stroke="#6B7280"
