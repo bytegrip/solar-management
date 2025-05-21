@@ -89,7 +89,17 @@ function calculateStatistics(data) {
 }
 
 async function generateCharts(data) {
-  const timestamps = data.map(item => new Date(item.timestamp.$date || item.timestamp).toLocaleTimeString())
+  // Format timestamps to be less cluttered
+  const timestamps = data.map((item, index) => {
+    // Only show every nth label to reduce clutter
+    if (index % Math.ceil(data.length / 6) !== 0) return ''
+    const date = new Date(item.timestamp.$date || item.timestamp)
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  })
   
   // Battery Capacity Chart
   const batteryCapacityChart = new QuickChart()
@@ -117,9 +127,22 @@ async function generateCharts(data) {
         }
       },
       scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            font: { size: 10 },
+            padding: 10
+          },
+          grid: {
+            display: false
+          }
+        },
         y: {
           beginAtZero: true,
-          max: 100
+          max: 100,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)'
+          }
         }
       }
     }
@@ -159,6 +182,23 @@ async function generateCharts(data) {
           text: 'Power Generation and Consumption',
           font: { size: 16 }
         }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            font: { size: 10 },
+            padding: 10
+          },
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)'
+          }
+        }
       }
     }
   })
@@ -186,6 +226,23 @@ async function generateCharts(data) {
           display: true,
           text: 'Inverter Temperature Over Time',
           font: { size: 16 }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 0,
+            font: { size: 10 },
+            padding: 10
+          },
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)'
+          }
         }
       }
     }
@@ -277,7 +334,7 @@ async function generatePDF(stats, timeRange, data) {
   }
   
   // Page 1: Overview and Battery Statistics
-  drawHeader(page1, 'UTM Solar Panel Report')
+  drawHeader(page1, 'Solar Panel Report')
   
   // Draw battery capacity chart
   const charts = await generateCharts(data)
