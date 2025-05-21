@@ -34,28 +34,37 @@ export function Navbar({ lastUpdateTime }) {
               className="w-auto h-10"
             />
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 via-emerald-400 to-blue-400 bg-clip-text text-transparent animate-gradient">
-              UTM Solar Panels
+                Solar Panels
             </h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
               <button
                 onClick={() => handleExport('today')}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
               >
-                Export Today
+                <svg className="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Today
               </button>
               <button
                 onClick={() => handleExport('week')}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
               >
-                Export Week
+                <svg className="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Week
               </button>
               <button
                 onClick={() => handleExport('month')}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
+                className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 hover:text-white transition-all duration-200 hover:shadow-lg hover:shadow-gray-500/10"
               >
-                Export Month
+                <svg className="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Month
               </button>
             </div>
             {lastUpdateTime && (
