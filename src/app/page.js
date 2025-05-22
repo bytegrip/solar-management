@@ -17,12 +17,58 @@ export default function Dashboard() {
   const [timeRange, setTimeRange] = useState('today')
   const [loading, setLoading] = useState(true)
   const [minLoadingComplete, setMinLoadingComplete] = useState(false)
+  const [lastUpdateTime, setLastUpdateTime] = useState(null)
 
   const fetchCurrentData = async () => {
     try {
-      const response = await fetch('/api/solar-data?timeRange=today')
+      const url = lastUpdateTime 
+        ? `/api/solar-data?timeRange=today&since=${lastUpdateTime}`
+        : '/api/solar-data?timeRange=today'
+      
+      const response = await fetch(url)
       const newData = await response.json()
-      setCurrentData(newData)
+      
+      if (newData.length > 0) {
+        setCurrentData(prevData => {
+          // Merge new data with existing data, avoiding duplicates
+          const mergedData = [...prevData]
+          newData.forEach(newItem => {
+            const newTimestamp = newItem.timestamp.$date || newItem.timestamp
+            const existingIndex = mergedData.findIndex(item => 
+              (item.timestamp.$date || item.timestamp) === newTimestamp
+            )
+            if (existingIndex === -1) {
+              mergedData.push(newItem)
+            } else {
+              mergedData[existingIndex] = newItem
+            }
+          })
+          return mergedData
+        })
+
+        // Update last update time
+        const latestTimestamp = newData[newData.length - 1].timestamp.$date || newData[newData.length - 1].timestamp
+        setLastUpdateTime(latestTimestamp)
+
+        // Update historical data if viewing today
+        if (timeRange === 'today') {
+          setData(prevData => {
+            const mergedData = [...prevData]
+            newData.forEach(newItem => {
+              const newTimestamp = newItem.timestamp.$date || newItem.timestamp
+              const existingIndex = mergedData.findIndex(item => 
+                (item.timestamp.$date || item.timestamp) === newTimestamp
+              )
+              if (existingIndex === -1) {
+                mergedData.push(newItem)
+              } else {
+                mergedData[existingIndex] = newItem
+              }
+            })
+            return mergedData
+          })
+        }
+      }
     } catch (error) {
       console.error('Error fetching current data:', error)
     }
@@ -30,9 +76,11 @@ export default function Dashboard() {
 
   const fetchHistoricalData = async () => {
     try {
+      setLastUpdateTime(null) // Reset last update time when changing time range
       const response = await fetch(`/api/solar-data?timeRange=${timeRange}`)
       const newData = await response.json()
       setData(newData)
+      setCurrentData(newData)
     } catch (error) {
       console.error('Error fetching historical data:', error)
     } finally {
@@ -78,7 +126,7 @@ export default function Dashboard() {
   }
 
   const latestData = currentData[currentData.length - 1]?.data || {}
-  const lastUpdateTime = currentData[currentData.length - 1]?.timestamp?.$date || currentData[currentData.length - 1]?.timestamp
+  const lastUpdateTimeStr = currentData[currentData.length - 1]?.timestamp?.$date || currentData[currentData.length - 1]?.timestamp
 
   const containerVariants = {
     hidden: { opacity: 0 },

@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb'
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const timeRange = searchParams.get('timeRange') || 'today'
+  const since = searchParams.get('since')
 
   try {
     const { db } = await connectToDatabase()
@@ -13,30 +14,31 @@ export async function GET(request) {
     let startDate = new Date()
     let endDate = new Date()
 
-    switch (timeRange) {
-      case 'today':
-        startDate.setHours(0, 0, 0, 0)
-        endDate = now
-        break
-      case 'yesterday':
-        startDate.setDate(now.getDate() - 1)
-        startDate.setHours(0, 0, 0, 0)
-        endDate = new Date(startDate)
-        endDate.setHours(23, 59, 59, 999)
-        break
-      case 'week':
-        startDate.setDate(now.getDate() - 7)
-        startDate.setHours(0, 0, 0, 0)
-        endDate = now
-        break
-      case 'month':
-        startDate.setMonth(now.getMonth() - 1)
-        startDate.setHours(0, 0, 0, 0)
-        endDate = now
-        break
-      default:
-        startDate.setHours(0, 0, 0, 0)
-        endDate = now
+    // If since parameter is provided, use it as the start date
+    if (since) {
+      startDate = new Date(since)
+    } else {
+      switch (timeRange) {
+        case 'today':
+          startDate.setHours(0, 0, 0, 0)
+          break
+        case 'yesterday':
+          startDate.setDate(now.getDate() - 1)
+          startDate.setHours(0, 0, 0, 0)
+          endDate = new Date(startDate)
+          endDate.setHours(23, 59, 59, 999)
+          break
+        case 'week':
+          startDate.setDate(now.getDate() - 7)
+          startDate.setHours(0, 0, 0, 0)
+          break
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1)
+          startDate.setHours(0, 0, 0, 0)
+          break
+        default:
+          startDate.setHours(0, 0, 0, 0)
+      }
     }
 
     const data = await collection.find({
