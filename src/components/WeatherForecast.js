@@ -50,17 +50,31 @@ export default function WeatherForecast() {
 
   if (loading) {
     return (
-      <div className="w-full h-24 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-        <div className="text-gray-400">Loading weather data...</div>
-      </div>
+      <Card className="w-full p-3 bg-gray-800/50 backdrop-blur-sm border-gray-700">
+        <div className="flex items-center justify-center h-24">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative"
+          >
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse' }}></div>
+            </div>
+          </motion.div>
+        </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full h-24 bg-red-50 rounded-lg flex items-center justify-center">
-        <div className="text-red-500">Error loading weather data</div>
-      </div>
+      <Card className="w-full p-3 bg-gray-800/50 backdrop-blur-sm border-gray-700">
+        <div className="flex items-center justify-center h-24">
+          <div className="text-red-500">Error loading weather data</div>
+        </div>
+      </Card>
     );
   }
 

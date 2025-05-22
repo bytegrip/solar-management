@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
+import { motion } from 'framer-motion';
 
 export default function PowerPredictionGraph() {
   const [predictions, setPredictions] = useState(null);
@@ -37,17 +38,31 @@ export default function PowerPredictionGraph() {
 
   if (loading) {
     return (
-      <div className="w-full h-64 bg-gray-100 rounded-lg animate-pulse flex items-center justify-center">
-        <div className="text-gray-400">Loading predictions...</div>
-      </div>
+      <Card className="w-full p-4 bg-gray-800/50 backdrop-blur-sm border-gray-700">
+        <div className="flex items-center justify-center h-64">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative"
+          >
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" style={{ animationDirection: 'reverse' }}></div>
+            </div>
+          </motion.div>
+        </div>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full h-64 bg-red-50 rounded-lg flex items-center justify-center">
-        <div className="text-red-500">Error loading predictions</div>
-      </div>
+      <Card className="w-full p-4 bg-gray-800/50 backdrop-blur-sm border-gray-700">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading predictions</div>
+        </div>
+      </Card>
     );
   }
 
@@ -77,7 +92,7 @@ export default function PowerPredictionGraph() {
               stroke="#9CA3AF"
               tick={{ fill: '#9CA3AF' }}
               label={{ 
-                value: 'Power (kW)', 
+                value: 'Power (W)', 
                 angle: -90, 
                 position: 'insideLeft',
                 fill: '#9CA3AF'

@@ -16,7 +16,7 @@ import PowerPredictionGraph from '@/components/PowerPredictionGraph'
 export default function Dashboard() {
   const [data, setData] = useState([])
   const [currentData, setCurrentData] = useState([])
-  const [timeRange, setTimeRange] = useState('today')
+  const [chartTimeRange, setChartTimeRange] = useState('today')
   const [loading, setLoading] = useState(true)
   const [minLoadingComplete, setMinLoadingComplete] = useState(false)
   const [lastUpdateTime, setLastUpdateTime] = useState(null)
@@ -52,8 +52,8 @@ export default function Dashboard() {
         const latestTimestamp = newData[newData.length - 1].timestamp.$date || newData[newData.length - 1].timestamp
         setLastUpdateTime(latestTimestamp)
 
-        // Update historical data if viewing today
-        if (timeRange === 'today') {
+        // Update chart data if viewing today's data
+        if (chartTimeRange === 'today') {
           setData(prevData => {
             const mergedData = [...prevData]
             newData.forEach(newItem => {
@@ -79,10 +79,9 @@ export default function Dashboard() {
   const fetchHistoricalData = async () => {
     try {
       setLastUpdateTime(null) // Reset last update time when changing time range
-      const response = await fetch(`/api/solar-data?timeRange=${timeRange}`)
+      const response = await fetch(`/api/solar-data?timeRange=${chartTimeRange}`)
       const newData = await response.json()
       setData(newData)
-      setCurrentData(newData)
     } catch (error) {
       console.error('Error fetching historical data:', error)
     } finally {
@@ -107,7 +106,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchHistoricalData()
-  }, [timeRange])
+  }, [chartTimeRange])
 
   if (loading || !minLoadingComplete) {
     return (
@@ -198,22 +197,22 @@ export default function Dashboard() {
         >
           <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10">
-              <SolarChart data={data} type="voltage" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+              <SolarChart data={data} type="voltage" timeRange={chartTimeRange} onTimeRangeChange={setChartTimeRange} />
             </Card>
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/10">
-              <SolarChart data={data} type="power" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+              <SolarChart data={data} type="power" timeRange={chartTimeRange} onTimeRangeChange={setChartTimeRange} />
             </Card>
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-amber-500/10">
-              <SolarChart data={data} type="current" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+              <SolarChart data={data} type="current" timeRange={chartTimeRange} onTimeRangeChange={setChartTimeRange} />
             </Card>
           </motion.div>
           <motion.div variants={itemVariants} className="h-full">
             <Card className="h-full p-4 sm:p-6 bg-gray-800/50 backdrop-blur-sm border-gray-700 hover:bg-gray-800/70 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/10">
-              <SolarChart data={data} type="temperature" timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+              <SolarChart data={data} type="temperature" timeRange={chartTimeRange} onTimeRangeChange={setChartTimeRange} />
             </Card>
           </motion.div>
         </motion.div>
