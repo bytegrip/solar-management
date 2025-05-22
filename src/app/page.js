@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
 import WeatherForecast from '@/components/WeatherForecast'
+import PowerPredictionGraph from '@/components/PowerPredictionGraph'
 
 export default function Dashboard() {
   const [data, setData] = useState([])
@@ -178,6 +179,15 @@ export default function Dashboard() {
           <motion.div variants={itemVariants} className="h-full">
             <SystemStatus data={latestData} history={currentData} />
           </motion.div>
+        </motion.div>
+
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-full"
+        >
+          <PowerPredictionGraph />
         </motion.div>
 
         <motion.div 
