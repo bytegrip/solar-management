@@ -10,6 +10,7 @@ import { LastRefresh } from '@/components/LastRefresh'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
+import WeatherForecast from '@/components/WeatherForecast'
 
 export default function Dashboard() {
   const [data, setData] = useState([])
@@ -153,6 +154,15 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       <Navbar lastUpdateTime={lastUpdateTime} />
       <div className="max-w-[1400px] mx-auto p-4 sm:p-6 space-y-6">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="w-full"
+        >
+          <WeatherForecast />
+        </motion.div>
+
         <motion.div 
           variants={containerVariants}
           initial="hidden"
