@@ -95,7 +95,7 @@ export default function WeatherForecast() {
           Last updated: {new Date(weatherData.lastUpdated).toLocaleTimeString()}
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
         {weatherData.forecast.forecastday.map((day, index) => (
           <motion.div
             key={day.date}
@@ -107,8 +107,8 @@ export default function WeatherForecast() {
             <div className="text-xs text-gray-400">
               {index === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative w-10 h-10">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10">
                 <Image
                   src={`https:${day.day.condition.icon}`}
                   alt={day.day.condition.text}
@@ -125,10 +125,10 @@ export default function WeatherForecast() {
                 </span>
               </div>
             </div>
-            <div className="text-xs text-gray-500 text-center mt-0.5 line-clamp-1">
+            <div className="text-[10px] sm:text-xs text-gray-500 text-center mt-0.5 line-clamp-1">
               {day.day.condition.text}
             </div>
-            <div className="text-xs text-gray-400">
+            <div className="text-[10px] sm:text-xs text-gray-400">
               {day.day.daily_chance_of_rain}%
             </div>
           </motion.div>
