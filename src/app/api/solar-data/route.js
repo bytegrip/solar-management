@@ -14,7 +14,6 @@ export async function GET(request) {
     let startDate = new Date()
     let endDate = new Date()
 
-    // If since parameter is provided, use it as the start date
     if (since) {
       startDate = new Date(since)
     } else {

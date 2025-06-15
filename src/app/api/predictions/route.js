@@ -1,183 +1,256 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 
-const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
-
-// Solar panel efficiency factors based on real-world data
 const WEATHER_IMPACT = {
-  // Cloud coverage impact on solar efficiency (based on NREL data)
   CLOUD_IMPACT: {
-    CLEAR: 1.0,           // 0-10% clouds
-    PARTLY_CLOUDY: 0.7,   // 11-50% clouds
-    MOSTLY_CLOUDY: 0.4,   // 51-90% clouds
-    OVERCAST: 0.2,        // 91-100% clouds
+    CLEAR: 1.0,
+    PARTLY_CLOUDY: 0.75,
+    MOSTLY_CLOUDY: 0.5,
+    OVERCAST: 0.25,
   },
-  // Temperature impact (based on solar panel temperature coefficient)
   TEMP_IMPACT: {
-    OPTIMAL: 1.0,         // 25°C (optimal temperature)
-    COLD: 0.95,           // < 10°C
-    HOT: 0.85,            // > 35°C
+    OPTIMAL: 1.0,
+    COLD: 0.9,
+    HOT: 0.8,
   },
-  // Rain impact
   RAIN_IMPACT: {
-    NONE: 1.0,            // 0% chance
-    LIGHT: 0.8,           // 1-30% chance
-    MODERATE: 0.6,        // 31-60% chance
-    HEAVY: 0.4,           // 61-100% chance
+    NONE: 1.0,
+    LIGHT: 0.7,
+    HEAVY: 0.3,
   }
 };
 
-async function fetchWeatherData() {
-  const response = await fetch(
-    `http://api.weatherapi.com/v1/forecast.json?key=${process.env.WEATHER_API_KEY}&q=47.06149235737582,28.86683069635403&days=7&aqi=no`
-  );
-  if (!response.ok) throw new Error('Failed to fetch weather data');
-  return response.json();
-}
+function getCloudImpact(description) {
+  if (!description) return WEATHER_IMPACT.CLOUD_IMPACT.PARTLY_CLOUDY;
 
-function getCloudImpact(cloudCover) {
-  if (cloudCover <= 10) return WEATHER_IMPACT.CLOUD_IMPACT.CLEAR;
-  if (cloudCover <= 50) return WEATHER_IMPACT.CLOUD_IMPACT.PARTLY_CLOUDY;
-  if (cloudCover <= 90) return WEATHER_IMPACT.CLOUD_IMPACT.MOSTLY_CLOUDY;
-  return WEATHER_IMPACT.CLOUD_IMPACT.OVERCAST;
+  const desc = description.toLowerCase();
+  if (desc.includes('clear') || desc.includes('sunny')) return WEATHER_IMPACT.CLOUD_IMPACT.CLEAR;
+  if (desc.includes('few clouds') || desc.includes('partly')) return WEATHER_IMPACT.CLOUD_IMPACT.PARTLY_CLOUDY;
+  if (desc.includes('scattered') || desc.includes('mostly')) return WEATHER_IMPACT.CLOUD_IMPACT.MOSTLY_CLOUDY;
+  if (desc.includes('overcast') || desc.includes('cloudy')) return WEATHER_IMPACT.CLOUD_IMPACT.OVERCAST;
+  return WEATHER_IMPACT.CLOUD_IMPACT.PARTLY_CLOUDY;
 }
 
 function getTempImpact(temp) {
-  if (temp >= 10 && temp <= 35) {
-    // Linear interpolation for temperatures between optimal ranges
-    if (temp <= 25) {
-      return 1.0 - ((25 - temp) * 0.003); // 0.3% loss per degree below optimal
-    } else {
-      return 1.0 - ((temp - 25) * 0.01); // 1% loss per degree above optimal
-    }
+  if (typeof temp !== 'number' || isNaN(temp)) return WEATHER_IMPACT.TEMP_IMPACT.OPTIMAL;
+
+  if (temp >= 20 && temp <= 25) return WEATHER_IMPACT.TEMP_IMPACT.OPTIMAL;
+  if (temp < 10) return WEATHER_IMPACT.TEMP_IMPACT.COLD;
+  if (temp > 35) return WEATHER_IMPACT.TEMP_IMPACT.HOT;
+
+  if (temp < 20) {
+    return 0.9 + ((temp - 10) / 10) * 0.1;
+  } else {
+    return 1.0 - ((temp - 25) / 10) * 0.2;
   }
-  return temp < 10 ? WEATHER_IMPACT.TEMP_IMPACT.COLD : WEATHER_IMPACT.TEMP_IMPACT.HOT;
 }
 
-function getRainImpact(rainChance) {
-  if (rainChance <= 0) return WEATHER_IMPACT.RAIN_IMPACT.NONE;
-  if (rainChance <= 30) return WEATHER_IMPACT.RAIN_IMPACT.LIGHT;
-  if (rainChance <= 60) return WEATHER_IMPACT.RAIN_IMPACT.MODERATE;
-  return WEATHER_IMPACT.RAIN_IMPACT.HEAVY;
+function getRainImpact(description) {
+  if (!description) return WEATHER_IMPACT.RAIN_IMPACT.NONE;
+
+  const desc = description.toLowerCase();
+  if (desc.includes('rain') || desc.includes('shower')) {
+    if (desc.includes('heavy') || desc.includes('thunderstorm')) {
+      return WEATHER_IMPACT.RAIN_IMPACT.HEAVY;
+    }
+    return WEATHER_IMPACT.RAIN_IMPACT.LIGHT;
+  }
+  if (desc.includes('snow') || desc.includes('thunderstorm')) {
+    return WEATHER_IMPACT.RAIN_IMPACT.HEAVY;
+  }
+  return WEATHER_IMPACT.RAIN_IMPACT.NONE;
 }
 
-async function calculatePrediction(weatherData, historicalData) {
-  // Validate historical data
-  if (!historicalData || historicalData.length === 0) {
-    throw new Error('No historical data available for predictions');
+async function ensureWeatherData(db) {
+  console.log('Checking for weather data...');
+
+  let weatherData = await db.collection('weather_data')
+      .findOne({}, { sort: { timestamp: -1 } });
+
+  console.log('Weather data found:', !!weatherData);
+
+  if (!weatherData || !weatherData.forecasts) {
+    console.log('No weather data found, attempting to fetch...');
+
+    try {
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/weather?refresh=true`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        console.log('Weather API call successful, checking database again...');
+        weatherData = await db.collection('weather_data')
+            .findOne({}, { sort: { timestamp: -1 } });
+      }
+    } catch (error) {
+      console.error('Failed to fetch weather data internally:', error);
+    }
   }
 
-  // Filter out invalid data points and calculate average
-  const validHistoricalData = historicalData.filter(data => 
-    data && 
-    data.data && 
-    typeof data.data.pv_input_power === 'number' && 
-    !isNaN(data.data.pv_input_power)
-  );
+  return weatherData;
+}
 
-  if (validHistoricalData.length === 0) {
-    throw new Error('No valid historical power data available');
+async function calculateSimplePrediction(weatherData, historicalData) {
+  console.log('Calculating predictions with weather data:', weatherData?.length, 'historical data:', historicalData?.length);
+
+  let basePower = 800;
+
+  if (historicalData && historicalData.length > 0) {
+    const validData = historicalData.filter(d =>
+        d && d.data && typeof d.data.pv_input_power === 'number' && d.data.pv_input_power > 0
+    );
+
+    if (validData.length > 0) {
+      const avgPower = validData.reduce((sum, d) => sum + d.data.pv_input_power, 0) / validData.length;
+      basePower = Math.max(200, avgPower);
+      console.log('Calculated base power from historical data:', basePower);
+    }
   }
 
-  // Calculate base power from historical data
-  const historicalAvg = validHistoricalData.reduce((sum, data) => sum + data.data.pv_input_power, 0) / validHistoricalData.length;
-  const basePower = Math.max(200, historicalAvg); // Minimum 200W baseline
+  if (!weatherData || !Array.isArray(weatherData)) {
+    console.error('Invalid weather data:', weatherData);
+    throw new Error('Invalid weather data provided');
+  }
 
-  // Calculate predictions for each day
-  const predictions = weatherData.forecast.forecastday.map(day => {
-    // Ensure we have the required data
-    if (!day || !day.day) {
-      throw new Error('Invalid weather data structure');
+  const predictions = weatherData.slice(0, 7).map((dayWeather, index) => {
+    if (!dayWeather) {
+      throw new Error(`Weather data missing for day ${index}`);
     }
 
-    const cloudCover = day.day.cloud || 0;
-    const rainChance = day.day.daily_chance_of_rain || 0;
-    const avgTemp = ((day.day.maxtemp_c || 0) + (day.day.mintemp_c || 0)) / 2;
-    
-    // Validate weather data
-    if (typeof cloudCover !== 'number' || typeof rainChance !== 'number' || typeof avgTemp !== 'number') {
-      console.error('Weather data validation failed:', { cloudCover, rainChance, avgTemp });
-      throw new Error('Invalid weather data received');
-    }
-    
-    // Calculate weather impact factors
-    const cloudImpact = getCloudImpact(cloudCover);
+    const avgTemp = dayWeather.temp_max && dayWeather.temp_min
+        ? (dayWeather.temp_max + dayWeather.temp_min) / 2
+        : 20; // Default temp
+
+    const cloudImpact = getCloudImpact(dayWeather.description);
     const tempImpact = getTempImpact(avgTemp);
-    const rainImpact = getRainImpact(rainChance);
-    
-    // Calculate final prediction with all factors
+    const rainImpact = getRainImpact(dayWeather.description);
+
     const weatherFactor = cloudImpact * tempImpact * rainImpact;
     const predictedPower = Math.round(basePower * weatherFactor);
-    
-    // Calculate confidence based on weather stability
-    const weatherStability = 1 - (Math.abs(cloudImpact - 1) + Math.abs(tempImpact - 1) + Math.abs(rainImpact - 1)) / 3;
-    const confidence = 0.7 + (weatherStability * 0.3);
-    
+
+    const daysFuture = index + 1;
+    const baseConfidence = 0.9 - (daysFuture * 0.1);
+    const weatherConfidence = (cloudImpact + tempImpact + rainImpact) / 3;
+    const confidence = Math.max(0.3, baseConfidence * weatherConfidence);
+
     return {
-      date: new Date(day.date),
+      date: dayWeather.date ? new Date(dayWeather.date) : new Date(Date.now() + index * 24 * 60 * 60 * 1000),
       predictedPower,
-      weatherData: day,
+      weatherData: dayWeather,
       confidence: Math.round(confidence * 100) / 100,
       factors: {
         cloudImpact,
         tempImpact,
-        rainImpact
+        rainImpact,
+        weatherFactor
       }
     };
   });
-  
+
+  console.log('Generated predictions:', predictions.length);
   return predictions;
 }
 
-export async function GET() {
+export async function GET(request) {
+  console.log('GET /api/predictions called');
+
   try {
     const { db } = await connectToDatabase();
-    const now = new Date();
-    
-    // Check for cached predictions
-    const cachedPredictions = await db.collection('predictions')
-      .find({
-        date: { $gte: now },
-        lastUpdated: { $gte: new Date(now.getTime() - CACHE_DURATION) }
-      })
-      .sort({ date: 1 })
-      .toArray();
-    
-    if (cachedPredictions.length === 7) {
-      return NextResponse.json(cachedPredictions);
-    }
-    
-    // Fetch fresh weather data
-    const weatherData = await fetchWeatherData();
-    
-    // Get historical power data for the last 30 days
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const historicalData = await db.collection('solar_data')
-      .find({ timestamp: { $gte: thirtyDaysAgo } })
-      .toArray();
-    
-    // Calculate new predictions
-    const predictions = await calculatePrediction(weatherData, historicalData);
-    
-    // Store predictions in database
-    const bulkOps = predictions.map(prediction => ({
-      updateOne: {
-        filter: { date: prediction.date },
-        update: { $set: prediction },
-        upsert: true
+    console.log('Database connected successfully');
+
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    console.log('Force refresh:', forceRefresh);
+
+    if (!forceRefresh) {
+      console.log('Checking for cached predictions...');
+      const existingPredictions = await db.collection('predictions')
+          .find({})
+          .sort({ date: 1 })
+          .toArray();
+
+      console.log('Found cached predictions:', existingPredictions.length);
+
+      if (existingPredictions.length > 0) {
+        const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+        const latestPrediction = existingPredictions[0];
+
+        if (latestPrediction.lastUpdated && new Date(latestPrediction.lastUpdated) > sixHoursAgo) {
+          return NextResponse.json({
+            predictions: existingPredictions,
+            fromCache: true,
+            lastUpdated: latestPrediction.lastUpdated
+          });
+        } else {
+          console.log('Cached predictions are stale, will refresh');
+        }
       }
-    }));
-    
-    if (bulkOps.length > 0) {
-      await db.collection('predictions').bulkWrite(bulkOps);
     }
-    
-    return NextResponse.json(predictions);
+
+    const weatherData = await ensureWeatherData(db);
+
+    if (!weatherData || !weatherData.forecasts) {
+      console.error('No weather data available after attempting to fetch');
+      return NextResponse.json(
+          {
+            error: 'No weather data available. Please check your weather API configuration.',
+            suggestion: 'Ensure WEATHER_API_KEY is set and the weather API is accessible.'
+          },
+          { status: 400 }
+      );
+    }
+
+    console.log('Weather data available with forecasts:', weatherData.forecasts.length);
+
+    console.log('Fetching historical solar data...');
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const historicalData = await db.collection('solar_data')
+        .find({ timestamp: { $gte: thirtyDaysAgo } })
+        .toArray();
+
+    console.log('Historical data found:', historicalData.length, 'records');
+
+    console.log('Calculating new predictions...');
+    const predictions = await calculateSimplePrediction(weatherData.forecasts, historicalData);
+
+    const now = new Date();
+    const predictionsWithTimestamp = predictions.map(pred => ({
+      ...pred,
+      lastUpdated: now
+    }));
+
+    console.log('Storing predictions in database...');
+    await db.collection('predictions').deleteMany({});
+    if (predictionsWithTimestamp.length > 0) {
+      await db.collection('predictions').insertMany(predictionsWithTimestamp);
+    }
+
+    console.log('Predictions stored successfully');
+
+    return NextResponse.json({
+      predictions: predictionsWithTimestamp,
+      fromCache: false,
+      lastUpdated: now
+    });
+
   } catch (error) {
-    console.error('Prediction error:', error);
+    console.error('Prediction API error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to generate predictions' },
-      { status: 500 }
+        {
+          error: error.message || 'Failed to generate predictions',
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          timestamp: new Date().toISOString()
+        },
+        { status: 500 }
     );
   }
-} 
+}
+
+export async function POST(request) {
+  console.log('POST /api/predictions called - forcing refresh');
+  return GET(new Request(request.url + '?refresh=true'));
+}

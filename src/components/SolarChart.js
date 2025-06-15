@@ -47,11 +47,9 @@ export function SolarChart({ data, type, timeRange, onTimeRangeChange }) {
 
   const formatData = (data) => {
     return getFilteredData(data).map(item => {
-      // Handle both MongoDB date format and regular date string
       const dateStr = item.timestamp.$date || item.timestamp
       const date = new Date(dateStr)
       
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         console.error('Invalid date:', dateStr)
         return null

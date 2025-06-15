@@ -32,7 +32,6 @@ export async function fetchWeatherData() {
     )
     const data = await response.json()
     
-    // Process the data to get daily forecasts
     const dailyForecasts = data.list.reduce((acc, item) => {
       const date = new Date(item.dt * 1000)
       const day = date.toISOString().split('T')[0]
@@ -67,10 +66,8 @@ export async function getWeatherData() {
   const { db } = await connectToDatabase()
   const collection = db.collection('weather_data')
   
-  // Get the latest weather data
   const latestData = await collection.findOne({}, { sort: { timestamp: -1 } })
   
-  // If no data exists or data is older than 2 hours, fetch new data
   if (!latestData || (Date.now() - latestData.timestamp.getTime() > 2 * 60 * 60 * 1000)) {
     const newData = await fetchWeatherData()
     await collection.insertOne({

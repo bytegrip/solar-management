@@ -63,7 +63,7 @@ function calculateStatistics(data) {
       }
     } else {
       if (isCharging && chargingStart) {
-        stats.battery.chargingTime += (timestamp - chargingStart) / (1000 * 60) // minutes
+        stats.battery.chargingTime += (timestamp - chargingStart) / (1000 * 60)
         isCharging = false
         chargingStart = null
       }
@@ -360,7 +360,6 @@ async function generatePDF(stats, timeRange, data) {
     height: 300
   })
   
-  // Draw power statistics
   const powerStats = [
     `Average PV Input Power: ${stats.power.avgPvInput.toFixed(1)}W`,
     `Maximum PV Input Power: ${stats.power.maxPvInput.toFixed(1)}W`,
@@ -390,10 +389,8 @@ async function generatePDF(stats, timeRange, data) {
   
   drawFooter(page2)
   
-  // Page 3: Temperature and System Health
   drawHeader(page3, 'System Health')
   
-  // Draw temperature chart
   const temperaturePdfImage = await pdfDoc.embedPng(charts.temperatureImage)
   page3.drawImage(temperaturePdfImage, {
     x: margin,
@@ -402,7 +399,6 @@ async function generatePDF(stats, timeRange, data) {
     height: 300
   })
   
-  // Draw temperature statistics
   const tempStats = [
     `Average Inverter Temperature: ${stats.temperature.avgTemp.toFixed(1)}°C`,
     `Maximum Inverter Temperature: ${stats.temperature.maxTemp.toFixed(1)}°C`,
@@ -427,7 +423,6 @@ async function generatePDF(stats, timeRange, data) {
     })
   })
   
-  // Draw system health summary
   const healthSummary = [
     'System Health Summary:',
     `• Battery Health: ${stats.battery.avgCapacity > 80 ? 'Excellent' : stats.battery.avgCapacity > 60 ? 'Good' : 'Needs Attention'}`,
@@ -455,7 +450,6 @@ async function generatePDF(stats, timeRange, data) {
   
   drawFooter(page3)
   
-  // Save the PDF
   return await pdfDoc.save()
 }
 

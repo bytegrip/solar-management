@@ -6,9 +6,7 @@ import { BatteryStatus } from '@/components/BatteryStatus'
 import { PowerStats } from '@/components/PowerStats'
 import { SystemStatus } from '@/components/SystemStatus'
 import { SolarChart } from '@/components/SolarChart'
-import { LastRefresh } from '@/components/LastRefresh'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
 import WeatherForecast from '@/components/WeatherForecast'
 import PowerPredictionGraph from '@/components/PowerPredictionGraph'
@@ -32,7 +30,6 @@ export default function Dashboard() {
       
       if (newData.length > 0) {
         setCurrentData(prevData => {
-          // Merge new data with existing data, avoiding duplicates
           const mergedData = [...prevData]
           newData.forEach(newItem => {
             const newTimestamp = newItem.timestamp.$date || newItem.timestamp
@@ -48,11 +45,9 @@ export default function Dashboard() {
           return mergedData
         })
 
-        // Update last update time
         const latestTimestamp = newData[newData.length - 1].timestamp.$date || newData[newData.length - 1].timestamp
         setLastUpdateTime(latestTimestamp)
 
-        // Update chart data if viewing today's data
         if (chartTimeRange === 'today') {
           setData(prevData => {
             const mergedData = [...prevData]
@@ -78,7 +73,7 @@ export default function Dashboard() {
 
   const fetchHistoricalData = async () => {
     try {
-      setLastUpdateTime(null) // Reset last update time when changing time range
+      setLastUpdateTime(null);
       const response = await fetch(`/api/solar-data?timeRange=${chartTimeRange}`)
       const newData = await response.json()
       setData(newData)
@@ -90,7 +85,6 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    // Set minimum loading time
     const minLoadingTimer = setTimeout(() => {
       setMinLoadingComplete(true)
     }, 500)
